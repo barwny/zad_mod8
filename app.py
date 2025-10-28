@@ -5,7 +5,6 @@ import base64
 import requests
 import os
 
-
 #zmienne środowiskowe
 load_dotenv()
 
