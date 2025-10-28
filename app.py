@@ -12,7 +12,7 @@ api_key = (
     os.getenv("OPENAI_API_KEY") or
     dotenv_values(".env").get("OPENAI_API_KEY")
 )
-openai_client = OpenAI(api_key=env["OPENAI_API_KEY"])
+openai_client = OpenAI(api_key=["OPENAI_API_KEY"])
 
 st.markdown(
     """
