@@ -1,21 +1,11 @@
 import streamlit as st
 from openai import OpenAI
-from dotenv import load_dotenv
+from dotenv import dotenv_values
 import base64
 import requests
-import os
 
-#zmienne środowiskowe
-load_dotenv()
-
-#Inicjalizacja klienta OpenAI
-if "OPENAI_API_KEY" in os.environ:
-    openai_api_key = os.environ["OPENAI_API_KEY"]
-else:
-    openai_api_key = st.text_input("Wprowadz swój klucz API od OpenAI aby kontynuować", type="password")
-
-if not openai_api_key:
-    st.stop()
+env = dotenv_values(".env")
+openai_client = OpenAI(api_key=env["OPENAI_API_KEY"])
 
 st.markdown(
     """
