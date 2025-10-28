@@ -5,14 +5,18 @@ import base64
 import requests
 import os
 
-load_dotenv()  # lokalnie wczyta .env; w chmurze nic nie zmienia
+try:
+    api_key = st.secrets["OPENAI_API_KEY"]
+except Exception:
+    api_key = os.getenv("OPENAI_API_KEY") or dotenv_values(".env").get("OPENAI_API_KEY")
 
-api_key = (
-    st.secrets.get("OPENAI_API_KEY") or
-    os.getenv("OPENAI_API_KEY") or
-    dotenv_values(".env").get("OPENAI_API_KEY")
-)
-openai_client = OpenAI(api_key=["OPENAI_API_KEY"])
+api_key = (api_key or "").strip()
+
+if not api_key or not (api_key.startswith("sk-") or api_key.startswith("sk-proj-")):
+    st.error("Brak lub niepoprawny OPENAI_API_KEY. Na Streamlit Cloud dodaj w Secrets: OPENAI_API_KEY = \"sk-...\" i zrestartuj aplikację.")
+    st.stop()
+
+openai_client = OpenAI(api_key=api_key)
 
 st.markdown(
     """
