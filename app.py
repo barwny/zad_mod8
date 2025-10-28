@@ -1,10 +1,17 @@
 import streamlit as st
 from openai import OpenAI
-from dotenv import dotenv_values
+from dotenv import load_dotenv, dotenv_values
 import base64
 import requests
+import os
 
-env = dotenv_values(".env")
+load_dotenv()  # lokalnie wczyta .env; w chmurze nic nie zmienia
+
+api_key = (
+    st.secrets.get("OPENAI_API_KEY") or
+    os.getenv("OPENAI_API_KEY") or
+    dotenv_values(".env").get("OPENAI_API_KEY")
+)
 openai_client = OpenAI(api_key=env["OPENAI_API_KEY"])
 
 st.markdown(
