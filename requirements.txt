@@ -1,9 +1,4 @@
-langfuse==2.51.4
 streamlit
-python-dotenv
-joblib
-pandas==1.5.3
-plotly
 openai
-pycaret==3.3.2
-scipy
+python-dotenv 
+requests
