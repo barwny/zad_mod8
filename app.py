@@ -5,6 +5,7 @@ import base64
 import requests
 import os
 
+# przekazanie klucza OpenAI do zmiennej api_key z secrets (Streamlit Cloud) lub .env
 try:
     api_key = st.secrets["OPENAI_API_KEY"]
 except Exception:
@@ -16,8 +17,10 @@ if not api_key or not (api_key.startswith("sk-") or api_key.startswith("sk-proj-
     st.error("Brak lub niepoprawny OPENAI_API_KEY. Na Streamlit Cloud dodaj w Secrets: OPENAI_API_KEY = \"sk-...\" i zrestartuj aplikację.")
     st.stop()
 
+# utworzenie klienta OpenAI do komunikacji z LLM
 openai_client = OpenAI(api_key=api_key)
 
+# nagłówek aplikacji
 st.markdown(
     """
     <h3 style='text-align: center;
@@ -35,25 +38,30 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+# sprawdzenie stanu sesji dla wygebrowanych obrazów i opowiadania
 if "generated_images" not in st.session_state:
     st.session_state["generated_images"] = {}
 if "generated_stories" not in st.session_state:
     st.session_state["generated_stories"] = {}
 
-# menu boczne
+# menu boczne (filtry)
 with st.sidebar:
     st.markdown("Używając poniższych fitrów opisz siebie:")
     person = st.radio("Kim jestem:", ['Dziewczynka', 'Chłopiec'])
     age = st.selectbox("Wiek:", ['3-5 lat', '6-9 lat', '9-12 lat'])
 
-# main program
+# przypisanie do tabs wartosci nazw tabów (zakładek)
 tabs = ["Kolorowanka", "Połącz kropki", "Pisanie po śladzie",
         "Znajdź ukryte przedmioty", "Stwórz obraz", "Krótkie opowiadanie",]
 
-tab_objs = st.tabs(tabs)
+# utworzenie zakładek (opcji) na ekranie głównym
+tab_obj = st.tabs(tabs)
 
-for i, tab in enumerate(tab_objs):
+# iteracja po nazwach zakładek - przypisanie odpowiedniego działania 
+for i, tab in enumerate(tab_obj):
     with tab:
+
+        # warunki dla zakładki "Stwórz obraz"
         if tabs[i] == "Stwórz obraz":
             user_prompt = st.text_area(
             "🧙‍♂️ Opisz jaki obraz mam wyczarować, lub zdaj się na mnie..",
@@ -62,14 +70,17 @@ for i, tab in enumerate(tab_objs):
             )
         else:
             user_prompt = ""
-
+        # przycisk dla każdej zakładki przekazujący warunki danej zakładki
         if st.button("Wyczaruj...🪄", key=f"create_{i}"):
             with st.spinner(""):
+
+                # przypisanie do zmiennej user_desc string konfiguarcji filtrów
                 user_desc = f"Dziecko, {person}, wiek: {age}"
 
+                # warunki dla zakładki "Krótkie opowiadanie"
                 if tabs[i] != "Krótkie opowiadanie":
                     
-                    # warunki dla obrazków
+                    # warunki dla zakładki Kolorowanka
                     if tabs[i] == "Kolorowanka":
                         full_prompt = (
                             "Stwórz prosty czarno-biały rysunek-kolorowankę. "
@@ -78,6 +89,7 @@ for i, tab in enumerate(tab_objs):
                             "Styl: wyraźne linie, brak koloru, idealne do druku jako kolorowanka lub zadanie."
                         )
 
+                    # warunki dla zakładki "Połącz kropki"
                     elif tabs[i] == "Połącz kropki":
                         full_prompt = (
                             "Stwórz czarno-białą łamigłówkę typu 'połącz kropki / śledzenie konturu' do druku (line art, 1024x1024). "
@@ -92,6 +104,7 @@ for i, tab in enumerate(tab_objs):
                             "Styl: wyraźne czarne punkty/kreski; brak koloru, idealne do druku jako kolorowanka lub zadanie."
                         )
 
+                    # warunki dla zakładki "Pisanie po śladzie"
                     elif tabs[i] == "Pisanie po śladzie":
                         full_prompt = (
                         "Stwórz czarno-białą kartę pracy 'pisanie po śladzie' (line art, 1024x1024). "
@@ -105,6 +118,7 @@ for i, tab in enumerate(tab_objs):
                         "Styl: wyraźny, czarny kontur kropek/kreskowania; tylko czerń i biel (bez szarości); wysoki kontrast; idealne do druku."
                         )
 
+                    # warunki dla zakładki "Znajdź ukryte przedmioty"
                     elif tabs[i] == "Znajdź ukryte przedmioty":
                         full_prompt = (
                             "Stwórz czarno-białą łamigłówkę typu 'znajdź ukryte przedmioty' (line art, 1024x1024). "
@@ -124,10 +138,11 @@ for i, tab in enumerate(tab_objs):
                             "Styl: wyraźne, czarne kontury, wysoki kontrast, tylko czerń i biel (bez szarości)."
                         )
 
+                    # warunki dla zakładki "Stwórz obraz"
                     elif tabs[i] == "Stwórz obraz":
                             text = user_prompt.strip()
                             if text:
-                                # Użytkownik podał opis
+                                # użytkownik wprowadził opis w zmiennej text
                                 full_prompt = (
                                     "Stwórz kolorową ilustrację w stylu przyjaznym dzieciom. "
                                     f"Temat: '{text}'. "
@@ -136,7 +151,7 @@ for i, tab in enumerate(tab_objs):
                                     "brak tekstu i znaków wodnych; format 1024x1024."
                                 )
                             else:
-                                # Pole puste – wymyśl motyw zgodny z user_desc
+                                # użytkonik nie wprowadził opsiu w zmiennej text
                                 full_prompt = (
                                     "Stwórz kolorową ilustrację w stylu przyjaznym dzieciom. "
                                     f"Dostosuj ilustrację do odbiorcy: {user_desc}. "
@@ -145,7 +160,9 @@ for i, tab in enumerate(tab_objs):
                                     "brak tekstu i znaków wodnych; format 1024x1024."
                                 )
                        
+# MAIN PROGRAM
 
+                    # generowanie obrazu na podstawie warunków z danej zakładki
                     image = openai_client.images.generate(
                         model="gpt-image-1",
                         prompt=full_prompt,
@@ -156,16 +173,20 @@ for i, tab in enumerate(tab_objs):
                     image_url = getattr(img_data, "url", None)
                     caption = f"{tabs[i]} – motyw auto"
 
+                    # wyświetlenie wygenerowanego obrazu istniejącego w image_url + możliwość pobrania
                     if image_url:
                         st.image(image_url, caption=caption, use_container_width=True)
                         st.download_button(
-                            label="💾 Pobierz obraz",
+                            label="🧙‍♂️ Pobierz obraz",
                             data=requests.get(image_url).content,
                             file_name=f"{tabs[i].lower().replace(' ', '_')}.png",
                             mime="image/png"
                         )
+
+                        # zapis obrazu w stanie sesji
                         st.session_state["generated_images"][tabs[i]] = image_url
 
+                    # wyświetlenie wygenerowanego przechowanego w zmiennej image_bytes )w formacie base64) + możliwość pobrania
                     elif hasattr(img_data, "b64_json") and img_data.b64_json:
                         image_bytes = base64.b64decode(img_data.b64_json)
                         st.image(image_bytes, caption=caption, use_container_width=True)
@@ -175,12 +196,14 @@ for i, tab in enumerate(tab_objs):
                             file_name=f"{tabs[i].lower().replace(' ', '_')}.png",
                             mime="image/png"
                         )
+
+                        # zapis obrazu w stanie sesji
                         st.session_state["generated_images"][tabs[i]] = img_data.b64_json
 
                     else:
                         st.error("🧙‍♂️ Nie udało się wyczarować, spróbuj ponownie.")
 
-                #Dla krótkiego opowiadania
+                # warunki dla zakładki "Krótkie opowiadanie"
                 else:
                     story_prompt = (
                         f"Napisz krótkie, wesołe opowiadanie dla dziecka ({user_desc}). "
@@ -188,7 +211,7 @@ for i, tab in enumerate(tab_objs):
                         "Język prosty, ciepły, przyjazny, pełen wyobraźni. "
                         "Temat może być dowolny, ale odpowiedni dla wieku dziecka."
                     )
-
+                    # generowanie tesktu przez LLM
                     story_response = openai_client.chat.completions.create(
                         model="gpt-4o-mini",
                         messages=[
@@ -198,20 +221,22 @@ for i, tab in enumerate(tab_objs):
                         max_tokens=500
                     )
 
+                    # wyświetlenie wygenerowanego tesktu
                     story = story_response.choices[0].message.content.strip()
-                    st.markdown(f"### 📖 Twoje opowiadanie\n\n{story}")
+                    st.markdown(f"### 🧙‍♂️ Twoje opowiadanie\n\n{story}")
 
-                    # Zapis w stanie sesji
+                    # zapis opowiadnaia w stanie sesji
                     st.session_state["generated_stories"][tabs[i]] = story
 
-                    # 📥 Dodaj przycisk do pobrania bajki
+                    # przysisk do porbania opowiadania
                     st.download_button(
-                        label="💾 Pobierz opowiadanie",
+                        label="🧙‍♂️ Pobierz opowiadanie",
                         data=story.encode("utf-8"),
                         file_name=f"opowiadanie_{person.lower()}_{age.replace(' ', '_')}.txt",
                         mime="text/plain"
                     )
-    # --- Wyświetl zapamiętane wyniki ---
+
+    # utrzymanie wygenerowanych obrazów i tekstów w stanie sesji po pobraniu danego obrazu / opowiadania
         elif tabs[i] in st.session_state["generated_images"]:
             saved = st.session_state["generated_images"][tabs[i]]
             caption = f"{tabs[i]} – motyw auto"
@@ -221,5 +246,5 @@ for i, tab in enumerate(tab_objs):
                 st.image(base64.b64decode(saved), caption=caption, use_container_width=True)
 
         elif tabs[i] in st.session_state["generated_stories"]:
-            st.markdown(f"### 📖 Twoje opowiadanie\n\n{st.session_state['generated_stories'][tabs[i]]}")
+            st.markdown(f"### 🧙‍♂️ Twoje opowiadanie\n\n{st.session_state['generated_stories'][tabs[i]]}")
 
